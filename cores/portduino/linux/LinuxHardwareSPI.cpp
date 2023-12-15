@@ -157,8 +157,16 @@ void HardwareSPI::begin() {
 }
 
 void HardwareSPI::end() {
-  if (spiChip)
-    delete spiChip;
+  if (spiChip) {
+#ifdef PORTDUINO_LINUX_HARDWARE
+    if (!spiChip->isSimulated())
+      delete (LinuxSPIChip*)spiChip;
+    else
+      delete spiChip;
+#else
+      delete spiChip;
+#endif
+  }
   spiChip = NULL;
 }
 
