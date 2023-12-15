@@ -121,9 +121,6 @@ void portduinoAddArguments(const struct argp_child &child,
 }
 
 void reboot() {
-  SPI.end();
-  Wire.end();
-  Serial1.end();
   execv(progArgv[0], progArgv);
 }
 
