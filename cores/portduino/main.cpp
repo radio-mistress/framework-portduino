@@ -4,6 +4,10 @@
 #include <argp.h>
 #include <stdio.h>
 #include <ftw.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
 
 /** # msecs to sleep each loop invocation.  FIXME - make this controlable via
  * config file or command line flags.
@@ -79,12 +83,37 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 }
 
 void getMacAddr(uint8_t *dmac) {
+
   dmac[0] = 0x80;
   dmac[1] = 0;
   dmac[2] = portduinoArguments.hwId >> 24;
   dmac[3] = portduinoArguments.hwId >> 16;
   dmac[4] = portduinoArguments.hwId >> 8;
   dmac[5] = portduinoArguments.hwId & 0xff;
+
+  if (portduinoArguments.hwId != 1) { // If this was actually set
+    return;
+  }
+  struct hci_dev_info di;
+  di.dev_id = 0;
+  bdaddr_t bdaddr;
+  char addr[18];
+  int btsock;
+  btsock = socket(AF_BLUETOOTH, SOCK_RAW, 1);
+  if (btsock < 0) { // If anything fails, just return with the default value
+    return;
+  }
+
+  if (ioctl(btsock, HCIGETDEVINFO, (void *) &di)) {
+    return;
+  }
+
+  dmac[0] = di.bdaddr.b[5];
+  dmac[1] = di.bdaddr.b[4];
+  dmac[2] = di.bdaddr.b[3];
+  dmac[3] = di.bdaddr.b[2];
+  dmac[4] = di.bdaddr.b[1];
+  dmac[5] = di.bdaddr.b[0];
 }
 
 /*
