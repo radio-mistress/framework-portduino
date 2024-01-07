@@ -4,6 +4,7 @@
 
 #include "Common.h"
 #include "Utility.h"
+#include "PortduinoGPIO.h"
 
 #include <sched.h>
 #include <stdlib.h>
@@ -14,6 +15,8 @@ void delay(unsigned long milliSec) {
   //timespec ts{.tv_sec = (time_t)(milliSec / 1000),
   //            .tv_nsec = (long)(milliSec % 1000) * 1000L * 1000L};
   //nanosleep(&ts, NULL);
+  if (realHardware)
+    gpioIdle();
   usleep(milliSec * 1000); 
 }
 

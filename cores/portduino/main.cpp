@@ -199,7 +199,8 @@ int main(int argc, char *argv[]) {
 
       // Even if the Arduino code doesn't want to sleep, ensure we don't  burn
       // too much CPU
-      delay(loopDelay);
+      if (!realHardware)
+        delay(loopDelay);
     }
     return 0;
   } else

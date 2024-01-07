@@ -211,3 +211,5 @@ void gpioIdle();
 
 /// Assign an implementation to a specific pin
 void gpioBind(GPIOPinIf *p);
+
+extern bool realHardware;

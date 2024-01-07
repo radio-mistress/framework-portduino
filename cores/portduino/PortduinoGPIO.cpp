@@ -15,6 +15,8 @@
 
 #define NUM_GPIOS 64
 
+bool realHardware = false;
+
 static GPIOPinIf *pins[NUM_GPIOS];
 
 
@@ -33,6 +35,7 @@ void gpioIdle() {
 void gpioBind(GPIOPinIf *p) {
     assert(p->getPinNum() < NUM_GPIOS);
     pins[p->getPinNum()] = p;
+    realHardware = true;
 }
 
 /**
