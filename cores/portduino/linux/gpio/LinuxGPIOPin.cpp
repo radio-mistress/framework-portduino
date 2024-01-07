@@ -103,7 +103,7 @@ static struct gpiod_chip *chip_open_by_name(const char *name)
 /**
  * Try to find the specified linux gpio line, throw exception if not found
  */
-static gpiod_line *getLine(const char *chipLabel, const char *linuxPinName) {
+gpiod_line *LinuxGPIOPin::getLine(const char *chipLabel, const char *linuxPinName) {
 	struct gpiod_chip *chip;
 	std::string path = "/dev/";
 	path += chipLabel;
@@ -112,8 +112,30 @@ static gpiod_line *getLine(const char *chipLabel, const char *linuxPinName) {
 	if (!chip) {
 		throw std::invalid_argument("Error, cannot open GPIO chip");
 	}
-	auto line = gpiod_chip_find_line(chip, linuxPinName);
 
+#if GPIOD_V == 2
+	struct gpiod_line_settings *settings;
+	struct gpiod_line_config *line_cfg;
+	struct gpiod_request_config *req_cfg = NULL;
+	struct gpiod_line_request *line = NULL;
+    offset = gpiod_chip_get_line_offset_from_name(chip, linuxPinName);
+	settings = gpiod_line_settings_new();
+	gpiod_line_settings_set_direction(settings, GPIOD_LINE_REQUEST_DIRECTION_AS_IS);
+	line_cfg = gpiod_line_config_new();
+	gpiod_line_config_add_line_settings(line_cfg, &offset, 1, settings);
+	req_cfg = gpiod_request_config_new();
+	gpiod_request_config_set_consumer(req_cfg, consumer);
+	line = gpiod_chip_request_lines(chip, req_cfg, line_cfg);
+
+	gpiod_request_config_free(req_cfg);
+	gpiod_line_config_free(line_cfg);
+	gpiod_line_settings_free(settings);
+	gpiod_chip_close(chip);
+	return line;
+
+
+#else
+	auto line = gpiod_chip_find_line(chip, linuxPinName);
 	struct gpiod_line_request_config request = {
 		consumer, GPIOD_LINE_REQUEST_DIRECTION_AS_IS, 0};
 	auto result = gpiod_line_request(line, &request, 0);
@@ -121,7 +143,10 @@ static gpiod_line *getLine(const char *chipLabel, const char *linuxPinName) {
 		throw std::invalid_argument("Error, cannot open GPIO chip");
 	}
 	return line;
+#endif
+
   }
+#if GPIOD_V == 1
   struct dirent **entries;
   int num_chips = scandir("/dev/", &entries, chip_dir_filter, alphasort);
   assert(num_chips > 0); // FIXME, throw exception
@@ -148,13 +173,14 @@ static gpiod_line *getLine(const char *chipLabel, const char *linuxPinName) {
       }
     }
   }
+#endif
   assert(0); // FIXME throw
 }
 
 /**
  * Try to find the specified linux gpio line, throw exception if not found
  */
-static gpiod_line *getLine(const char *chipLabel, const int linuxPinNum) {
+gpiod_line *LinuxGPIOPin::getLine(const char *chipLabel, const int linuxPinNum) {
 	struct gpiod_chip *chip;
 	std::string path = "/dev/";
 	path += chipLabel;
@@ -163,6 +189,26 @@ static gpiod_line *getLine(const char *chipLabel, const int linuxPinNum) {
 	if (!chip) {
 		throw std::invalid_argument("Error, cannot open GPIO chip");
 	}
+#if GPIOD_V == 2
+	struct gpiod_line_settings *settings;
+	struct gpiod_line_config *line_cfg;
+	struct gpiod_request_config *req_cfg = NULL;
+	struct gpiod_line_request *line = NULL;
+    offset = linuxPinNum;
+	settings = gpiod_line_settings_new();
+	gpiod_line_settings_set_direction(settings, GPIOD_LINE_REQUEST_DIRECTION_AS_IS);
+	line_cfg = gpiod_line_config_new();
+	gpiod_line_config_add_line_settings(line_cfg, &offset, 1, settings);
+	req_cfg = gpiod_request_config_new();
+	gpiod_request_config_set_consumer(req_cfg, consumer);
+	line = gpiod_chip_request_lines(chip, req_cfg, line_cfg);
+
+	gpiod_request_config_free(req_cfg);
+	gpiod_line_config_free(line_cfg);
+	gpiod_line_settings_free(settings);
+	gpiod_chip_close(chip);
+	return line;
+#else
 	auto line = gpiod_chip_get_line(chip, linuxPinNum);
 
 	struct gpiod_line_request_config request = {
@@ -172,7 +218,9 @@ static gpiod_line *getLine(const char *chipLabel, const int linuxPinNum) {
 		throw std::invalid_argument("Error, cannot open GPIO chip");
 	}
 	return line;
+#endif
   }
+#if GPIOD_V == 1
   struct dirent **entries;
   int num_chips = scandir("/dev/", &entries, chip_dir_filter, alphasort);
   assert(num_chips > 0); // FIXME, throw exception
@@ -199,6 +247,7 @@ static gpiod_line *getLine(const char *chipLabel, const int linuxPinNum) {
       }
     }
   }
+#endif
   assert(0); // FIXME throw
 }
 
@@ -245,7 +294,7 @@ void LinuxGPIOPin::writePin(PinStatus s) {
 
 void LinuxGPIOPin::setPinMode(PinMode m) {
   GPIOPin::setPinMode(m);
-
+#if GPIOD_V == 1
   // The gpiod call below does not play well with an already claimed GPIO
   // So we release it first.
   gpiod_line_release(line);
@@ -257,6 +306,26 @@ void LinuxGPIOPin::setPinMode(PinMode m) {
   else {
     gpiod_line_request_input(line, consumer);
   }
+#else
+	struct gpiod_line_settings *settings;
+	struct gpiod_line_config *line_cfg;
+	int ret;
+	settings = gpiod_line_settings_new();
+	if (m == OUTPUT) {
+		gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_OUTPUT);
+		gpiod_line_settings_set_output_value(settings, (gpiod_line_value) readPin());
+	} else {
+		gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_INPUT);
+	}
+	line_cfg = gpiod_line_config_new();
+	ret = gpiod_line_config_add_line_settings(line_cfg, &offset, 1,settings);
+	ret = gpiod_line_request_reconfigure_lines(line, line_cfg);
+
+	gpiod_line_config_free(line_cfg);
+	gpiod_line_settings_free(settings);
+
+
+#endif
 }
 
 
