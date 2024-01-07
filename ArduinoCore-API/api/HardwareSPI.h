@@ -118,7 +118,9 @@ class HardwareSPI
     virtual void attachInterrupt();
     virtual void detachInterrupt();
 
-    virtual void begin();
+    virtual void begin() {begin("/dev/spidev0.0");};
+    virtual void begin(const char *name);
+
     virtual void end();
 };
 

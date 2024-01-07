@@ -16,7 +16,7 @@
 
 class LinuxSPIChip : public SPIChip, private PosixFile {
 public:
-  LinuxSPIChip(const char *name = "/dev/spidev0.0") : PosixFile(name) {
+  LinuxSPIChip(const char *name) : PosixFile(name) {
     uint8_t mode = SPI_MODE_0;
     uint8_t lsb = false;
     uint32_t speed = 2000000;
@@ -137,7 +137,7 @@ void HardwareSPI::detachInterrupt() {
   // Do nothing
 }
 
-void HardwareSPI::begin() {
+void HardwareSPI::begin(const char *name) {
   // We only do this init once per boot
   if (!spiChip) {
 
@@ -145,7 +145,7 @@ void HardwareSPI::begin() {
     // FIXME, only install the following on linux and only if we see that the
     // device exists in the filesystem
     try {
-      spiChip = new LinuxSPIChip();
+      spiChip = new LinuxSPIChip(name);
     } catch (...) {
       printf("No hardware spi chip found...\n");
     }
