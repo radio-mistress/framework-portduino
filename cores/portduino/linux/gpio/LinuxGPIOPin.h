@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <gpiod.h>
 
-#ifndef GPIOD_LINE_REQUEST_DIRECTION_AS_IS
+#ifndef GPIOD_LINE_BULK_MAX_LINES
 #define GPIOD_V 2
 #define GPIOD_LINE_REQUEST_DIRECTION_AS_IS GPIOD_LINE_DIRECTION_AS_IS
 #define gpiod_line gpiod_line_request
