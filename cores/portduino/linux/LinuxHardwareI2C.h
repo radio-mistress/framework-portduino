@@ -23,6 +23,8 @@ class LinuxHardwareI2C : public HardwareI2C {
   int i2c_file;
 
 public:
+  void begin(const char* device);
+
   virtual void begin();
 
   virtual void begin(uint8_t address) {begin(); };

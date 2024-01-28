@@ -17,8 +17,11 @@ namespace arduino {
     bool hasBegun = false;
 
     void LinuxHardwareI2C::begin() {
+        begin("/dev/i2c-1");
+    }
+    void LinuxHardwareI2C::begin(const char * device) {
         if (!hasBegun) {
-            i2c_file = open("/dev/i2c-1", O_RDWR);
+            i2c_file = open(device, O_RDWR);
             hasBegun = true;
         }
     }
