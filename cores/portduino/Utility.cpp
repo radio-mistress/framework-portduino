@@ -5,6 +5,7 @@
 #include "Utility.h"
 #include <csignal>
 #include <stdio.h>
+#include <stdarg.h>
 
 void notImplemented(const char *msg) { printf("%s is not implemented\n", msg); }
 
