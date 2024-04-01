@@ -21,6 +21,7 @@
 #include "Common.h"
 #include <inttypes.h>
 #include "Stream.h"
+#include "SPIChip.h"
 
 #define SPI_HAS_TRANSACTION
 
@@ -107,6 +108,7 @@ class HardwareSPI
     virtual uint8_t transfer(uint8_t data);
     virtual uint16_t transfer16(uint16_t data);
     virtual void transfer(void *buf, size_t count);
+    virtual void transfer(void *out, void *in, size_t count);
 
     // Transaction Functions
     virtual void usingInterrupt(int interruptNumber);
@@ -122,6 +124,8 @@ class HardwareSPI
     virtual void begin(const char *name);
 
     virtual void end();
+  protected:
+    SPIChip *spiChip;
 };
 
 // Alias SPIClass to HardwareSPI since it's already the defacto standard for SPI classe name
