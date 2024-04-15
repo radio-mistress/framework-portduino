@@ -115,14 +115,14 @@ void HardwareSPI::notUsingInterrupt(int interruptNumber) {
 
 void HardwareSPI::beginTransaction(SPISettings settings) {
   // printf("beginTransaction\n");
-  spiChip->transfer(NULL, NULL, 0, false); // turn on chip select
+  // spiChip->transfer(NULL, NULL, 0, false); // turn on chip select
   assert(settings.bitOrder == MSBFIRST); // we don't support changing yet
   assert(settings.dataMode == SPI_MODE0);
 }
 
 void HardwareSPI::endTransaction(void) {
   assert(spiChip);
-  spiChip->transfer(NULL, NULL, 0, true); // turn off chip select
+  // spiChip->transfer(NULL, NULL, 0, true); // turn off chip select
 
   // printf("endTransaction\n");
 }
