@@ -121,11 +121,12 @@ class HardwareSPI
     virtual void detachInterrupt();
 
     virtual void begin() {begin("/dev/spidev0.0");};
-    virtual void begin(const char *name);
+    virtual void begin(const char *name, uint32_t freq = 2000000);
+    //uint32_t defaultSpeed;
 
     virtual void end();
   protected:
-    SPIChip *spiChip;
+    SPIChip *spiChip = nullptr;
 };
 
 // Alias SPIClass to HardwareSPI since it's already the defacto standard for SPI classe name
