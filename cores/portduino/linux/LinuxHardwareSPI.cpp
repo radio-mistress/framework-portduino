@@ -148,22 +148,21 @@ void HardwareSPI::detachInterrupt() {
 void HardwareSPI::begin(uint32_t freq) {
 
   if (!spiChip) {
+#ifdef PORTDUINO_LINUX_HARDWARE
     if (SPI_map[spiString] != nullptr) {
       spiChip = std::static_pointer_cast<SPIChip>(SPI_map[spiString]);
     } else {
 
-#ifdef PORTDUINO_LINUX_HARDWARE
-    // FIXME, only install the following on linux and only if we see that the
-    // device exists in the filesystem
-    try {
-      spiChip = std::make_shared<LinuxSPIChip>(spiString.c_str(), freq);
-      SPI_map[spiString] = spiChip;
-
-    } catch (...) {
-      printf("No hardware spi chip found...\n");
+      // FIXME, only install the following on linux and only if we see that the
+      // device exists in the filesystem
+      try {
+        spiChip = std::make_shared<LinuxSPIChip>(spiString.c_str(), freq);
+        SPI_map[spiString] = spiChip;
+      } catch (...) {
+        printf("No hardware spi chip found...\n");
+      }
     }
 #endif
-    }
     if (!spiChip) // no hw spi found, use the simulator
       spiChip = std::make_shared<SimSPIChip>();
   }
