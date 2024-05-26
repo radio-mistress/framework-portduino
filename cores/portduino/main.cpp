@@ -8,6 +8,9 @@
 #include <sys/ioctl.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
+#include <cerrno>
+#include <iostream>
+#include <cstring>
 
 #ifdef USE_X11
 #include <thread>
@@ -154,11 +157,24 @@ void portduinoAddArguments(const struct argp_child &child,
 }
 
 void reboot() {
-  execv(progArgv[0], progArgv);
+  int err = execv(progArgv[0], progArgv);
+  printf("execv() returned %i!\n", err);
+  std::cout << "error: " << std::strerror(errno) << '\n';
+  exit(EXIT_FAILURE);
 }
 
 int main(int argc, char *argv[]) {
-  progArgv = argv;
+
+  progArgv = (char**) malloc((argc + 1) * sizeof(char*)); // New pointer array, argc + 1 to hold the final null
+  int j = 0;
+  for (int i = 0; i < argc; i++) { // iterate through the arguments, stripping out the erase command, to avoid erase on reboot()
+    if (strcmp(argv[i], "-e") != 0 && strcmp(argv[i], "--erase") != 0  ) {
+      progArgv[j] = argv[i];
+      j++;
+    }
+  }
+  progArgv[j] = NULL;
+
   portduinoCustomInit();
 
   auto *args = &portduinoArguments;
@@ -189,6 +205,7 @@ int main(int argc, char *argv[]) {
     int status = mkdir(fsRoot.c_str(), 0700);
     if (status != 0 && errno == EEXIST && args->erase) {
       // Remove contents of existing VFS root directory
+      std::cout << "Erasing virtual Filesystem!" << std::endl;
       rmrf(const_cast<char*>(fsRoot.c_str())); 
     }
 
