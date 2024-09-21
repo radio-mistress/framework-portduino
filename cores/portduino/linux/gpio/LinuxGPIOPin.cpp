@@ -222,7 +222,7 @@ gpiod_line *LinuxGPIOPin::getLine(const char *chipLabel, const int linuxPinNum) 
   struct dirent **entries;
   int num_chips = scandir("/dev/", &entries, chip_dir_filter, alphasort);
   assert(num_chips > 0); // FIXME, throw exception
-  log(SysGPIO, LogDebug, "getLine(%s, %s)", chipLabel, linuxPinNum);
+  log(SysGPIO, LogDebug, "getLine(%s, %d)", chipLabel, linuxPinNum);
   for (int i = 0; i < num_chips; i++) {
     chip = chip_open_by_name(entries[i]->d_name);
     if (!chip) {
