@@ -89,7 +89,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
-void getMacAddr(uint8_t *dmac) {
+void _getMacAddr(uint8_t *dmac) {
 
   dmac[0] = 0x80;
   dmac[1] = 0;
