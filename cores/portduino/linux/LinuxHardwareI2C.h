@@ -20,7 +20,7 @@ enum ResultI2c {
 };
 
 class LinuxHardwareI2C : public HardwareI2C {
-  int i2c_file;
+  int i2c_file = 0;
 
 public:
   void begin(const char* device);
@@ -39,12 +39,11 @@ public:
 
   virtual uint8_t endTransmission(void) { return endTransmission(true); }
 
-  virtual uint8_t requestFrom(uint8_t address, size_t len, bool stopBit) {
-    notImplemented("requestFrom");
-    return 0;
-  }
+  virtual uint8_t requestFrom(uint8_t address, size_t len, bool stopBit);
 
-  virtual uint8_t requestFrom(uint8_t address, size_t len);
+  virtual uint8_t requestFrom(uint8_t address, size_t len)  {
+    return requestFrom(address, len, true);
+  }
 
   virtual void onReceive(void (*)(int)) NOT_IMPLEMENTED("onReceive");
 
@@ -65,7 +64,7 @@ public:
   virtual int read();
 
   virtual uint8_t readBytes(uint8_t address, size_t len, bool stopBit) {
-    notImplemented("requestFrom");
+    notImplemented("readBytes");
     return 0;
   }
 
