@@ -3,10 +3,10 @@
 #ifndef ESPASYNCUDP_H
 #define ESPASYNCUDP_H
 
-#include <signal.h>
 #include "IPAddress.h"
 #include "Print.h"
 #include <functional>
+#include <atomic>
 #include <mutex>
 #include <memory>
 #include <thread>
@@ -73,6 +73,7 @@ private:
     // the queue is used because uv_udp_send is not threadsafe and uv_async can merge multiple calls into one callback
     std::vector<std::unique_ptr<asyncUDPSendTask>> _sendQueue;
 
+    std::atomic<bool> _quit;
     std::thread _ioThread;
 
     bool _connected;
@@ -85,7 +86,10 @@ private:
 public:
     AsyncUDP();
     ~AsyncUDP() {
-        raise(SIGSEGV); // FIXME: implement closing and teardown
+        _quit.store(true);
+        uv_async_send(&_async);
+        _ioThread.join();
+        uv_loop_close(&_loop);
     }
 
     void onPacket(AuPacketHandlerFunctionWithArg cb, void * arg=NULL) {

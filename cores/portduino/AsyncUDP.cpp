@@ -1,4 +1,5 @@
 #include "AsyncUDP.h"
+#include "Utility.h"
 
 void _asyncudp_async_cb(uv_async_t *handle) {
     AsyncUDP *udp = (AsyncUDP *)handle->data;
@@ -38,9 +39,8 @@ bool AsyncUDP::listenMulticast(const IPAddress addr, uint16_t port, uint8_t ttl)
     if (_connected) {
         return false;
     }
-    // FIXME: implement error handling rather than raising SIGSEGV
     if (uv_udp_init(&_loop, &_socket) < 0) {
-        raise(SIGSEGV);
+        portduinoError("FIXME: implement proper error handling; uv_udp_init failed");
     }
     _socket.data = this;
     // FIXME: don't do bytes → string → bytes IP conversion
@@ -49,23 +49,21 @@ bool AsyncUDP::listenMulticast(const IPAddress addr, uint16_t port, uint8_t ttl)
     snprintf(addr_str, maxIpLength, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
     addr_str[maxIpLength] = '\0';
     struct sockaddr uvAddr;
-    if (uv_ip4_addr(addr_str, port, (struct sockaddr_in *)&uvAddr) < 0) {
-        raise(SIGSEGV);
-    }
+    uv_ip4_addr(addr_str, port, (struct sockaddr_in *)&uvAddr);
     if (uv_udp_bind(&_socket, (const struct sockaddr *)&uvAddr, 0) < 0) {
-        raise(SIGSEGV);
+        portduinoError("FIXME: implement proper error handling; uv_udp_bind failed");
     }
     if (uv_udp_set_multicast_loop(&_socket, false) < 0) {
-        raise(SIGSEGV);
+        portduinoError("FIXME: implement proper error handling; uv_udp_set_multicast_loop failed");
     }
     if (uv_udp_set_multicast_ttl(&_socket, ttl) < 0) {
-        raise(SIGSEGV);
+        portduinoError("FIXME: implement proper error handling; uv_udp_set_multicast_ttl failed");
     }
     if (uv_udp_set_membership(&_socket, addr_str, NULL, UV_JOIN_GROUP) < 0) {
-        raise(SIGSEGV);
+        portduinoError("FIXME: implement proper error handling; uv_udp_set_membership failed");
     }
     if (uv_udp_recv_start(&_socket, _asyncudp_alloc_buffer_cb, _asyncudp_on_read_cb) < 0) {
-        raise(SIGSEGV);
+        portduinoError("FIXME: implement proper error handling; uv_udp_recv_start failed");
     }
 
     _ioThread = std::thread([this](){
@@ -96,6 +94,16 @@ void AsyncUDP::_DO_NOT_CALL_async_cb() {
         _sendQueueMutex.lock();
     }
     _sendQueueMutex.unlock();
+    if (_quit.load()) {
+        uv_udp_recv_stop(&_socket);
+        // FIXME: don't do bytes → string → bytes IP conversion
+        int maxIpLength = 3*4+3; // 3 digits per octet, 4 octets, 3 dots
+        char addr_str[maxIpLength+1]; // +1 for null terminator
+        snprintf(addr_str, maxIpLength, "%d.%d.%d.%d", _listenIP[0], _listenIP[1], _listenIP[2], _listenIP[3]);
+        addr_str[maxIpLength] = '\0';
+        uv_udp_set_membership(&_socket, addr_str, NULL, UV_LEAVE_GROUP);
+        uv_stop(&_loop);
+    }
 };
 
 void _asyncudp_send_cb(uv_udp_send_t *req, int status) {
@@ -111,15 +119,13 @@ void AsyncUDP::_doWrite(const uint8_t *data, size_t len, const IPAddress addr, u
 
     // FIXME: implement error handling rather than raising SIGSEGV
     struct sockaddr uvAddr;
-    if (uv_ip4_addr(addr_str, port, (struct sockaddr_in *)&uvAddr) < 0) {
-        raise(SIGSEGV);
-    }
+    uv_ip4_addr(addr_str, port, (struct sockaddr_in *)&uvAddr);
 
     uv_udp_send_t *req = (uv_udp_send_t *)malloc(sizeof(uv_udp_send_t));
     uv_buf_t msg;
     msg.base = (char *)data;
     msg.len = len;
     if (uv_udp_send(req, &_socket, &msg, 1, (const struct sockaddr *)&uvAddr, _asyncudp_send_cb) < 0) {
-        raise(SIGSEGV);
+        portduinoError("FIXME: implement proper error handling; uv_udp_send failed");
     }
 };
