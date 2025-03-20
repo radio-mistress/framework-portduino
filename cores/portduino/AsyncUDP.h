@@ -1,5 +1,3 @@
-// FIXME: this is a really hacky implementation that just has the things required to make the firmware compile and run.
-
 #ifndef ESPASYNCUDP_H
 #define ESPASYNCUDP_H
 
