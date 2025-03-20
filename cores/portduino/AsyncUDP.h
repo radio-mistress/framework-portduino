@@ -45,13 +45,7 @@ class asyncUDPSendTask final {
         uint16_t port;
 
     public:
-        asyncUDPSendTask(uint8_t *data, size_t len, IPAddress addr, uint16_t port) {
-            this->data = (uint8_t*)malloc(len);
-            memcpy(this->data, data, len);
-            this->len = len;
-            this->addr = addr;
-            this->port = port;
-        };
+        asyncUDPSendTask(uint8_t *data, size_t len, IPAddress addr, uint16_t port);
     
         ~asyncUDPSendTask() {
             free(data);
@@ -85,12 +79,7 @@ private:
 
 public:
     AsyncUDP();
-    ~AsyncUDP() {
-        _quit.store(true);
-        uv_async_send(&_async);
-        _ioThread.join();
-        uv_loop_close(&_loop);
-    }
+    ~AsyncUDP();
 
     void onPacket(AuPacketHandlerFunctionWithArg cb, void * arg=NULL) {
         onPacket(std::bind(cb, arg, std::placeholders::_1));

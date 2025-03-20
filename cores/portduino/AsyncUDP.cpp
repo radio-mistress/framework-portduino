@@ -4,7 +4,7 @@
 void _asyncudp_async_cb(uv_async_t *handle) {
     AsyncUDP *udp = (AsyncUDP *)handle->data;
     udp->_DO_NOT_CALL_async_cb();
-};
+}
 
 AsyncUDP::AsyncUDP() {
     _handler = NULL;
@@ -12,12 +12,27 @@ AsyncUDP::AsyncUDP() {
     uv_loop_init(&_loop);
     _async.data = this;
     uv_async_init(&_loop, &_async, _asyncudp_async_cb);
-};
+}
+
+AsyncUDP::~AsyncUDP() {
+    _quit.store(true);
+    uv_async_send(&_async);
+    _ioThread.join();
+    uv_loop_close(&_loop);
+}
+
+asyncUDPSendTask::asyncUDPSendTask(uint8_t *data, size_t len, IPAddress addr, uint16_t port) {
+    this->data = (uint8_t*)malloc(len);
+    memcpy(this->data, data, len);
+    this->len = len;
+    this->addr = addr;
+    this->port = port;
+}
 
 void _asyncudp_alloc_buffer_cb(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
     buf->base = (char *)malloc(suggested_size);
     buf->len = suggested_size;
-};
+}
 
 void _asyncudp_on_read_cb(uv_udp_t *handle, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags) {
     AsyncUDP *udp = (AsyncUDP *)handle->data;
@@ -33,7 +48,7 @@ void AsyncUDP::_DO_NOT_CALL_uv_on_read(uv_udp_t *handle, ssize_t nread, const uv
         h(packet);
     }
     free(buf->base);
-};
+}
 
 bool AsyncUDP::listenMulticast(const IPAddress addr, uint16_t port, uint8_t ttl) {
     if (_connected) {
@@ -73,7 +88,7 @@ bool AsyncUDP::listenMulticast(const IPAddress addr, uint16_t port, uint8_t ttl)
     _listenIP = addr;
     _connected = true;
     return true;    
-};
+}
 
 size_t AsyncUDP::writeTo(const uint8_t *data, size_t len, const IPAddress addr, uint16_t port) {
     auto task = std::make_unique<asyncUDPSendTask>((uint8_t*)data, len, addr, port);
@@ -82,7 +97,7 @@ size_t AsyncUDP::writeTo(const uint8_t *data, size_t len, const IPAddress addr, 
     _sendQueueMutex.unlock();
     uv_async_send(&_async);
     return len;
-};
+}
 
 void AsyncUDP::_DO_NOT_CALL_async_cb() {
     _sendQueueMutex.lock();
@@ -104,11 +119,11 @@ void AsyncUDP::_DO_NOT_CALL_async_cb() {
         uv_udp_set_membership(&_socket, addr_str, NULL, UV_LEAVE_GROUP);
         uv_stop(&_loop);
     }
-};
+}
 
 void _asyncudp_send_cb(uv_udp_send_t *req, int status) {
     free(req);
-};
+}
 
 void AsyncUDP::_doWrite(const uint8_t *data, size_t len, const IPAddress addr, uint16_t port) {
     // FIXME: don't do bytes → string → bytes IP conversion
@@ -128,4 +143,4 @@ void AsyncUDP::_doWrite(const uint8_t *data, size_t len, const IPAddress addr, u
     if (uv_udp_send(req, &_socket, &msg, 1, (const struct sockaddr *)&uvAddr, _asyncudp_send_cb) < 0) {
         portduinoError("FIXME: implement proper error handling; uv_udp_send failed");
     }
-};
+}
