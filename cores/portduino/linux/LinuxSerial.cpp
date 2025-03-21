@@ -190,7 +190,7 @@ namespace arduino {
     }
 
     int LinuxSerial::read(void) {
-        int buf;
+        int buf = 0;
         ::read(serial_port, &buf, 1);
         return buf;
     }
