@@ -38,7 +38,7 @@ inline pin_size_t digitalPinToInterrupt(pin_size_t pinNumber) { return pinNumber
  */
 extern void portduinoSetup();
 
-/** Apps can optionally define this function to do *very* early app init.  typically you should just use it to call porduinoAddArguments()
+/** Apps can optionally define this function to do *very* early app init.  typically you should just use it to call portduinoAddArguments()
  */
 extern void portduinoCustomInit();
 

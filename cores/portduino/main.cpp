@@ -39,7 +39,7 @@ void __attribute__((weak)) portduinoCustomInit() {}
 const char *argp_program_version = "portduino 0.1.0";
 const char *argp_program_bug_address =
     "https://github.com/meshtastic/Meshtastic-device";
-static char doc[] = "An application written with porduino";
+static char doc[] = "An application written with portduino";
 static char args_doc[] = "...";
 
 static struct argp_option options[] = {
