@@ -77,6 +77,7 @@ private:
 
     uv_loop_t _loop;
     uv_udp_t _socket;
+    int _fd;
     uv_async_t _async;
 
 public:
