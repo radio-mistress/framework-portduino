@@ -61,13 +61,13 @@ bool AsyncUDP::listenMulticast(const IPAddress addr, uint16_t port, uint8_t ttl)
         return false;
     }
     if (uv_udp_init(&_loop, &_socket) < 0) {
-        portduinoError("FIXME: implement proper error handling; uv_udp_init failed");
+        return false;
     }
     _socket.data = this;
 
     _fd = socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0);
     if (_fd < 0) {
-        portduinoError("FIXME: implement proper error handling; socket failed");
+        return false;
     }
 
     // We want multiple distinct processes to all be able to join the same multicast mesh.
@@ -75,33 +75,41 @@ bool AsyncUDP::listenMulticast(const IPAddress addr, uint16_t port, uint8_t ttl)
     // SO_REUSEADDR and SO_REUSEPORT allows multiple instances to loadbalance incoming UDP packets.
     int opt = 1;
     if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) < 0) {
-        portduinoError("FIXME: implement proper error handling; setsockopt SO_REUSEADDR failed");
+        // FIXME: show a message, this is not a killer but it will prevent multiple instances to share the same port
     }
     opt = 1;
     if (setsockopt(_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(int)) < 0) {
-        portduinoError("PLEASE OPEN AN ISSUE ON https://github.com/meshtastic/framework-portduino/issues/new and tag @Jorropo; you appear to run a kernel before 3.9, and we could just run without this option set but this means you couldn't use more than one deamon on the same multicast mesh.");
+        // FIXME: show a message, this is not a killer but it will prevent multiple instances to share the same port
     }
     // On Linux, setting SO_BROADCAST has the undocumented side effect to change the loadbalance
     // behavior into a broadcast where all sockets receive all packets, which we want.
     // We never want to send packets to the broadcast address, which is the documented behavior.
     opt = 1;
     if (setsockopt(_fd, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(int)) < 0) {
-        portduinoError("FIXME: implement proper error handling; setsockopt SO_BROADCAST failed");
+        close(_fd);
+        _fd = 0;
+        return true;
     }
     
     opt = ttl;
     if (setsockopt(_fd, IPPROTO_IP, IP_MULTICAST_TTL, &opt, sizeof(opt)) < 0) {
-        portduinoError("FIXME: implement proper error handling; setsockopt IP_MULTICAST_TTL failed");
+        close(_fd);
+        _fd = 0;
+        return true;
     }
     // Lastly disable loop, we don't want to receive our own packets, but thankfully Linux implement
     // this properly and all other processes on the same 2 tuple do receive them.
     opt = 0;
     if (setsockopt(_fd, IPPROTO_IP, IP_MULTICAST_LOOP, &opt, sizeof(opt)) < 0) {
-        portduinoError("FIXME: implement proper error handling; setsockopt IP_MULTICAST_TTL failed");
+        close(_fd);
+        _fd = 0;
+        return true;
     }
 
     if (uv_udp_open(&_socket, _fd) < 0) {
-        portduinoError("FIXME: implement proper error handling; uv_udp_open failed");
+        close(_fd);
+        _fd = 0;
+        return true;
     }
 
     // FIXME: don't do bytes → string → bytes IP conversion
@@ -113,13 +121,19 @@ bool AsyncUDP::listenMulticast(const IPAddress addr, uint16_t port, uint8_t ttl)
     uv_ip4_addr(addr_str, port, (struct sockaddr_in *)&uvAddr);
 
     if (uv_udp_set_membership(&_socket, addr_str, NULL, UV_JOIN_GROUP) < 0) {
-        portduinoError("FIXME: implement proper error handling; uv_udp_set_membership failed");
+        close(_fd);
+        _fd = 0;
+        return true;
     }
     if (uv_udp_bind(&_socket, (const struct sockaddr *)&uvAddr, 0) < 0) {
-        portduinoError("FIXME: implement proper error handling; uv_udp_bind failed");
+        close(_fd);
+        _fd = 0;
+        return true;
     }
     if (uv_udp_recv_start(&_socket, _asyncudp_alloc_buffer_cb, _asyncudp_on_read_cb) < 0) {
-        portduinoError("FIXME: implement proper error handling; uv_udp_recv_start failed");
+        close(_fd);
+        _fd = 0;
+        return true;
     }
 
     _ioThread = std::thread([this](){
@@ -128,7 +142,7 @@ bool AsyncUDP::listenMulticast(const IPAddress addr, uint16_t port, uint8_t ttl)
 
     _listenIP = addr;
     _connected = true;
-    return true;    
+    return true;
 }
 
 size_t AsyncUDP::writeTo(const uint8_t *data, size_t len, const IPAddress addr, uint16_t port) {
@@ -182,6 +196,6 @@ void AsyncUDP::_doWrite(const uint8_t *data, size_t len, const IPAddress addr, u
     msg.base = (char *)data;
     msg.len = len;
     if (uv_udp_send(req, &_socket, &msg, 1, (const struct sockaddr *)&uvAddr, _asyncudp_send_cb) < 0) {
-        portduinoError("FIXME: implement proper error handling; uv_udp_send failed");
+        // FIXME: I don't know how to handle this error, better to just drop the packet.
     }
 }
