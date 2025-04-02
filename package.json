@@ -1,7 +1,19 @@
 {
-  "description": "Portduino framework",
   "name": "framework-portduino",
-  "system": "*",
-  "url": "https://github.com/geeksville/framework-portduino",
-  "version": "0.0.1"
+  "title": "Portduino Framework",
+  "description": "A framework for running Arduino-like code on Linux.",
+  "homepage": "https://github.com/radio-mistress/framework-portduino",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/radio-mistress/framework-portduino.git"
+  },
+  "version": "1.0.0",
+  "frameworks": {
+    "arduino": {
+      "package": "framework-portduino",
+      "script": "builder/main.py"
+    }
+  },
+  "platforms": ["linux"]
 }
