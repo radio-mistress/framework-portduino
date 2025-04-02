@@ -15,5 +15,5 @@
       "script": "builder/main.py"
     }
   },
-  "platforms": ["linux"]
+  "platforms": ["linux_x86_64"]
 }
