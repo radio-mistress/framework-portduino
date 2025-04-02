@@ -1,0 +1,31 @@
+{
+    "name": "portduino",
+    "title": "Portduino Platform",
+    "description": "A platform for running Arduino-like code on Linux.",
+    "homepage": "https://github.com/radio-mistress/framework-portduino",
+    "license": "MIT",
+    "keywords": ["arduino", "linux", "portduino"],
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/radio-mistress/framework-portduino.git"
+    },
+    "version": "1.0.0",
+    "frameworks": {
+      "arduino": {
+        "package": "framework-portduino",
+        "script": "builder/main.py"
+      }
+    },
+    "packages": {
+      "toolchain-gccarmnoneeabi": {
+        "type": "toolchain",
+        "owner": "platformio",
+        "version": ">=1.40803.0,<1.40805.0"
+      },
+      "framework-portduino": {
+        "type": "framework",
+        "optional": true,
+        "version": "~1.0.0"
+      }
+    }
+  }
